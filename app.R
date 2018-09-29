@@ -4,6 +4,8 @@ library(shinyWidgets)
 library(leaflet)
 library(ggplot2)
 library(devtools)
+library(dplyr)
+library(lubridate)
 library(jsonlite)
 library(tidyr)
 
@@ -108,26 +110,15 @@ ui <- dashboardPage(
    ),
    
    # --------------------------------------- Graphs
-   sidebarLayout(position = "left",
-                 sidebarPanel("sidebar panel",
-                              checkboxInput("do2", "Make 2 plots", value = T)
-                 ),
-                 mainPanel("main panel",
-                           fluidRow(
-                             splitLayout(style = "border: 1px solid silver:", cellWidths = c(300,200,100), 
-                                         plotOutput("plotgraph1"), 
-                                         plotOutput("plotgraph2"),
-                                         plotOutput("plotgraph3")
-                             )
-                           )
-                 )
+   fluidRow(
+     plotOutput("histo")
    )
-   
   )
 )
 
 
 server <- function(input, output) {
+  
   
   # loading data
   data <- reactive({
@@ -193,24 +184,28 @@ server <- function(input, output) {
                        color = ~pal(df$crimeType)
       )
     
+    crime <- getCrimeByID(ctype)
+    # histogram logic
+    ID <- 1:12
+    output$histo <-renderPlot({
+      p<- df %>%
+        mutate(mon =month(df$date)) %>%
+        select(crimeType, mon)%>%
+        group_by(mon,crimeType) %>%
+        summarize(total = n()) %>%
+        ggplot(aes(x = mon, y = total,fill=crimeType)) + geom_bar(stat = "identity") + 
+        ggtitle("Crimes in all months")+
+        ylab("Crime Count")+
+        scale_x_continuous("Months", labels = as.character(ID), breaks = ID)
+      p
+    })
+    
   })
   
   
   # --------- graphs
-  pt1 <- qplot(rnorm(500),fill=I("red"),binwidth=0.2,title="plotgraph1")
-  pt3 <- qplot(rnorm(600),fill=I("blue"),binwidth=0.2,title="plotgraph3")
-  pt2 <- reactive({
-    input$do2
-    if (input$do2){
-      return(qplot(rnorm(500),fill=I("blue"),binwidth=0.2,title="plotgraph2"))
-    } else {
-      return(NULL)
-    }
-  })
-  output$plotgraph1 = renderPlot({pt1})
-  output$plotgraph2 = renderPlot({pt2()})
-  output$plotgraph3 = renderPlot({pt3}
-  )
+  
+
   
   output$progressBox <- renderValueBox({
     valueBox(
