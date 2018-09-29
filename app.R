@@ -131,29 +131,68 @@ server <- function(input, output) {
   
   # loading data
   data <- reactive({
-    getLimitedData(limit = 10)
+    getLimitedData(limit = 500)
   })
   
   # ---dropdown choosing crime
-  output$crime <- renderText({
-    cat(input$crimes)
+  output$a <- renderText({
+    paste(input$crimes)
   })
   
-  
-  
+
   
   # --------------------- map
- 
   
   output$map <- renderLeaflet({
+    
     df <- data()
+    pal <- colorFactor(
+      palette = 'Dark2',
+      domain = data()$crimeType
+    )
+    
     m <- leaflet(data = df) %>%
       addTiles() %>%
-      addMarkers(lng = ~longitude,
+      addCircleMarkers(lng = ~longitude,
                  lat = ~latitude,
-                 popup = paste("Offense", df$crimeType, "<br>")
+                 popup = paste("Offense", df$crimeType, "<br>"),
+                 color = ~pal(df$crimeType)
                  )
     m
+  })
+  
+
+
+  observeEvent(input$crimes,{
+    
+    ctype <- input$crimes
+    df <- data()
+    
+    if(ctype ==1){
+      df <- df
+    }else{
+      print("inside else")
+      df <- getDataByCrimeType(df,as.numeric(ctype))
+    }
+    
+    print(ctype)
+    print(df)
+    
+    pal <- colorFactor(
+      palette = 'Dark2',
+      domain = df$crimeType
+    )
+
+    
+    leafletProxy("map",data = df) %>%
+     clearMarkers() %>%
+      addTiles() %>%
+      addCircleMarkers(lng = ~longitude,
+                       lat = ~latitude,
+                       popup = paste("Offense", df$crimeType, "<br>"),
+                       color = ~pal(df$crimeType)
+      )
+    
   })
   
   
