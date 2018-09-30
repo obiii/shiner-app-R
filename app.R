@@ -80,7 +80,7 @@ ui <- dashboardPage(
     #tableOutput("data")
     
    #year picker
-    selectInput("years","Select Year:",c("2018","2017")),
+    selectInput("years","Select Year:",c("2018","2017"),selected = "2018"),
     
     # check box
     switchInput(inputId = "switch",value=FALSE)
@@ -151,6 +151,38 @@ server <- function(input, output) {
                  color = ~pal(df$crimeType)
                  )
     m
+  })
+  
+  observeEvent(input$years,{
+    
+    print("Inside Years")
+    year <- input$years
+    
+    data <- cur$dat
+    
+    data <- data[year(data$date) == year,]
+    print(data)
+    if(nrow(data) >= 1){
+      
+      pal <- colorFactor(
+        palette = 'Dark2',
+        domain = data$crimeType
+      )
+      
+      leafletProxy("map",data = data) %>%
+        clearMarkers() %>%
+        clearHeatmap()%>%
+        addTiles() %>%
+        addCircleMarkers(lng = ~longitude,
+                         lat = ~latitude,
+                         popup = paste("Offense", data$crimeType, "<br>"),
+                         color = ~pal(data$crimeType)
+        )
+      
+    }else{
+      
+    }
+    
   })
   
   observeEvent(input$switch,{
