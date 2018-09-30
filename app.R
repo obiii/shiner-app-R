@@ -156,13 +156,12 @@ server <- function(input, output) {
   
   observeEvent(input$years,{
     
-    print("Inside Years")
     year <- input$years
     
     data <- cur$dat
     
     data <- data[year(data$date) == year,]
-    print(data)
+
     if(nrow(data) >= 1){
       
       pal <- colorFactor(
@@ -187,14 +186,8 @@ server <- function(input, output) {
   })
   
   observeEvent(input$switch,{
-    print("Inside Switch")
-    
-    
-    
+
     if(input$switch == TRUE){
-      
-      print("on")
-      print(cur$dat)
   
       leafletProxy("map",data = cur$dat) %>%
       clearMarkers()%>% addProviderTiles(providers$CartoDB.DarkMatter) %>%
@@ -202,7 +195,7 @@ server <- function(input, output) {
         
       
     }else if(input$switch == FALSE){
-      print("off")
+
       
       pal <- colorFactor(
         palette = 'Dark2',
@@ -234,7 +227,7 @@ server <- function(input, output) {
     if(ctype ==1){
       df <- df
     }else{
-      print("inside else")
+      
       df <- getDataByCrimeType(df,as.numeric(ctype))
     }
     cur$dat <- df
@@ -274,34 +267,30 @@ server <- function(input, output) {
   
   
   # --------- graphs
-  
-
-  
-  
   output$crime1 <- renderValueBox({
     
-    df <- main$dat
-    
+    df <- data()
+
     df <- as.data.frame(df %>% group_by(crimeType) %>% summarise(Value = n()))
     df <- df[order(df$Value,decreasing = TRUE),]
     df <- df[1:3,]
     main$dat <- df
     
     valueBox(
-      paste0(as.character(main$dat[1,][1])," - ", as.character(c[1,][2])), "Highest", icon = icon("list"),
+      paste0(as.character(df[1,][1])," - ", as.character(df[1,][2])), "Highest", icon = icon("list"),
       color = "red"
     )
   })
   
   output$crime2 <- renderValueBox({
     valueBox(
-      paste0(as.character(main$dat[2,][1])," - ", as.character(c[2,][2])), "2nd", icon = icon("list"),
+      paste0(as.character(main$dat[2,][1])," - ", as.character(main$dat[2,][2])), "2nd", icon = icon("list"),
       color = "orange"
     )
   })
   output$crime3 <- renderValueBox({
     valueBox(
-      paste0(as.character(main$dat[3,][1])," - ", as.character(c[3,][2])), "3rd", icon = icon("list"),
+      paste0(as.character(main$dat[3,][1])," - ", as.character(main$dat[3,][2])), "3rd", icon = icon("list"),
       color = "yellow"
     )
   })
