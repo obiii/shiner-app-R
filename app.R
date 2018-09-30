@@ -19,7 +19,7 @@ ui <- dashboardPage(
   
   
   dashboardSidebar(
-    textOutput("a"),
+    
     # crime picker
     selectInput("crimes", "Choose Crime Type:",
                 c("ALL" = 1,
@@ -124,10 +124,7 @@ server <- function(input, output) {
     getLimitedData(limit = 500)
   })
   
-  # ---dropdown choosing crime
-  output$a <- renderText({
-    paste(input$crimes)
-  })
+
   
 
   
