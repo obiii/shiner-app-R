@@ -90,13 +90,12 @@ ui <- dashboardPage(
   dashboardBody(
     # ---------------------------- Values box KPIs
     fluidRow(
-      # A static valueBox
-      valueBox(10 * 2, "New Orders", icon = icon("credit-card")),
+      valueBoxOutput("crime1"),
       
       # Dynamic valueBoxes
-      valueBoxOutput("progressBox"),
+      valueBoxOutput("crime2"),
       
-      valueBoxOutput("approvalBox")
+      valueBoxOutput("crime3")
     ),
     
     
@@ -118,6 +117,7 @@ ui <- dashboardPage(
 server <- function(input, output) {
   
   cur <- reactiveValues(dat=NULL)
+  main <- reactiveValues(dat=NULL)
   
   # loading data
   data <- reactive({
@@ -136,6 +136,7 @@ server <- function(input, output) {
   output$map <- renderLeaflet({
     
     df <- data()
+    main$dat <- df
     cur$dat <- df
     
     pal <- colorFactor(
@@ -276,16 +277,31 @@ server <- function(input, output) {
   
 
   
-  output$progressBox <- renderValueBox({
+  
+  output$crime1 <- renderValueBox({
+    
+    df <- main$dat
+    
+    df <- as.data.frame(df %>% group_by(crimeType) %>% summarise(Value = n()))
+    df <- df[order(df$Value,decreasing = TRUE),]
+    df <- df[1:3,]
+    main$dat <- df
+    
     valueBox(
-      paste0(25 + input$count, "%"), "Progress", icon = icon("list"),
-      color = "purple"
+      paste0(as.character(main$dat[1,][1])," - ", as.character(c[1,][2])), "Highest", icon = icon("list"),
+      color = "red"
     )
   })
   
-  output$approvalBox <- renderValueBox({
+  output$crime2 <- renderValueBox({
     valueBox(
-      "80%", "Approval", icon = icon("thumbs-up", lib = "glyphicon"),
+      paste0(as.character(main$dat[2,][1])," - ", as.character(c[2,][2])), "2nd", icon = icon("list"),
+      color = "orange"
+    )
+  })
+  output$crime3 <- renderValueBox({
+    valueBox(
+      paste0(as.character(main$dat[3,][1])," - ", as.character(c[3,][2])), "3rd", icon = icon("list"),
       color = "yellow"
     )
   })
