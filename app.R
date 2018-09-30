@@ -2,6 +2,7 @@ library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
 library(leaflet)
+library(leaflet.extras)
 library(ggplot2)
 library(devtools)
 library(dplyr)
@@ -78,14 +79,11 @@ ui <- dashboardPage(
                   )),
     #tableOutput("data")
     
-    # date picker
-    dateRangeInput('dateRange',
-                   label = 'Date range: ',
-                   start = Sys.Date() - 2, end = Sys.Date() + 2
-    ),
+   #year picker
+    selectInput("years","Select Year:",c("2018","2017")),
     
     # check box
-    switchInput(inputId = "id", value = TRUE)
+    switchInput(inputId = "switch",value=FALSE)
     
   ),
   
@@ -119,6 +117,7 @@ ui <- dashboardPage(
 
 server <- function(input, output) {
   
+  cur <- reactiveValues(dat=NULL)
   
   # loading data
   data <- reactive({
@@ -137,6 +136,8 @@ server <- function(input, output) {
   output$map <- renderLeaflet({
     
     df <- data()
+    cur$dat <- df
+    
     pal <- colorFactor(
       palette = 'Dark2',
       domain = data()$crimeType
@@ -152,12 +153,50 @@ server <- function(input, output) {
     m
   })
   
+  observeEvent(input$switch,{
+    print("Inside Switch")
+    
+    
+    
+    if(input$switch == TRUE){
+      
+      print("on")
+      print(cur$dat)
+  
+      leafletProxy("map",data = cur$dat) %>%
+      clearMarkers()%>% addProviderTiles(providers$CartoDB.DarkMatter) %>%
+        addHeatmap(lng=~longitude, lat=~latitude, intensity = ~victims, blur = 20, max = 0.05, radius = 15)
+        
+      
+    }else if(input$switch == FALSE){
+      print("off")
+      
+      pal <- colorFactor(
+        palette = 'Dark2',
+        domain = cur$dat$crimeType
+      )
+      
+      
+      leafletProxy("map",data = cur$dat) %>%
+        clearMarkers() %>%
+        clearHeatmap()%>%
+        addTiles() %>%
+        addCircleMarkers(lng = ~longitude,
+                         lat = ~latitude,
+                         popup = paste("Offense", cur$dat$crimeType, "<br>"),
+                         color = ~pal(cur$dat$crimeType)
+        )
+    }
+    
+  })
+  
 
 
   observeEvent(input$crimes,{
     
     ctype <- input$crimes
     df <- data()
+   
     
     if(ctype ==1){
       df <- df
@@ -165,9 +204,7 @@ server <- function(input, output) {
       print("inside else")
       df <- getDataByCrimeType(df,as.numeric(ctype))
     }
-    
-    print(ctype)
-    print(df)
+    cur$dat <- df
     
     pal <- colorFactor(
       palette = 'Dark2',
