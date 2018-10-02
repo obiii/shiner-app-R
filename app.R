@@ -1,14 +1,8 @@
-#library(shiny)
-#library(shinydashboard)
-#library(shinyWidgets)
-library(leaflet)
-library(leaflet.extras)
-library(ggplot2)
-#library(devtools)
+
 library(dplyr)
 library(lubridate)
 
-#library(tidyr)
+
 
 devtools::install_github("obiii/lab5", subdir="viser",  quiet = TRUE)
 library(viser)
