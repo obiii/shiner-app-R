@@ -1,8 +1,6 @@
 
-library(dplyr)
-library(lubridate)
-
-
+pakgs <- c("lubridate","shinydashboard","shinyalert","shinyWidgets","leaflet","leaflet.extras","dplyr","ggplot2")
+lapply(pakgs, library, character.only = TRUE)
 
 devtools::install_github("obiii/lab5", subdir="viser",  quiet = TRUE)
 library(viser)
@@ -82,6 +80,7 @@ ui <- dashboardPage(
   ),
   
   dashboardBody(
+    useShinyalert(),
     # ---------------------------- Values box KPIs
     fluidRow(
       valueBoxOutput("crime1"),
@@ -171,7 +170,7 @@ server <- function(input, output) {
         )
       
     }else{
-      
+      shinyalert("Oops!", paste0("No data for: ",input$years), type = "error")
     }
     
   })
@@ -222,38 +221,41 @@ server <- function(input, output) {
       df <- getDataByCrimeType(df,as.numeric(ctype))
     }
     cur$dat <- df
-    
-    pal <- colorFactor(
-      palette = 'Dark2',
-      domain = df$crimeType
-    )
 
     
-    leafletProxy("map",data = df) %>%
-     clearMarkers() %>%
-      addTiles() %>%
-      addCircleMarkers(lng = ~longitude,
-                       lat = ~latitude,
-                       popup = paste("Offense", df$crimeType, "<br>"),
-                       color = ~pal(df$crimeType)
+    if(nrow(cur$dat) >=1 ){
+      pal <- colorFactor(
+        palette = 'Dark2',
+        domain = df$crimeType
       )
-    
-    crime <- getCrimeByID(ctype)
-    # histogram logic
-    ID <- 1:12
-    output$histo <-renderPlot({
-      p<- df %>%
-        mutate(mon =month(df$date)) %>%
-        select(crimeType, mon)%>%
-        group_by(mon,crimeType) %>%
-        summarize(total = n()) %>%
-        ggplot(aes(x = mon, y = total,fill=crimeType)) + geom_bar(stat = "identity") + 
-        ggtitle("Crimes in all months")+
-        ylab("Crime Count")+
-        scale_x_continuous("Months", labels = as.character(ID), breaks = ID)
-      p
-    })
-    
+      leafletProxy("map",data = df) %>%
+        clearMarkers() %>%
+        addTiles() %>%
+        addCircleMarkers(lng = ~longitude,
+                         lat = ~latitude,
+                         popup = paste("Offense", df$crimeType, "<br>"),
+                         color = ~pal(df$crimeType)
+        )
+      
+      crime <- getCrimeByID(ctype)
+      # histogram logic
+      ID <- 1:12
+      output$histo <-renderPlot({
+        p<- df %>%
+          mutate(mon =month(df$date)) %>%
+          select(crimeType, mon)%>%
+          group_by(mon,crimeType) %>%
+          summarize(total = n()) %>%
+          ggplot(aes(x = mon, y = total,fill=crimeType)) + geom_bar(stat = "identity") + 
+          ggtitle("Crimes in all months")+
+          ylab("Crime Count")+
+          scale_x_continuous("Months", labels = as.character(ID), breaks = ID)
+        p
+      })
+      
+    }else{
+      shinyalert("Oops!", "No data found ", type = "error")
+    }
   })
   
   
