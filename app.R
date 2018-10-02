@@ -6,7 +6,7 @@ library(leaflet.extras)
 library(ggplot2)
 #library(devtools)
 library(dplyr)
-#library(lubridate)
+library(lubridate)
 
 #library(tidyr)
 
